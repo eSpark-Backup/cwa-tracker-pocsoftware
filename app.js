@@ -21,7 +21,7 @@ const swaggerOptions = {
       },
     ],
   },
-  apis: ["app.js"], // Path to the API docs
+  apis: ["./*.js"], // Matches all .js files in the current directory
 };
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
@@ -45,42 +45,60 @@ mongoose
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
+// Define a route
 /**
  * @swagger
- * /tracker:
- *   post:
- *     summary: Add or update a device
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               deviceId:
- *                 type: string
- *                 example: "12346"
- *               deviceName:
- *                 type: string
- *                 example: "My Device"
- *               location:
- *                 type: object
- *                 properties:
- *                   coordinates:
- *                     type: array
- *                     items:
- *                       type: number
- *                     example: [-83.935242, 40.730610] // Example coordinates for New York City
+ * /:
+ *   get:
+ *     summary: Returns a greeting message
  *     responses:
  *       200:
- *         description: Device location updated
- *       201:
- *         description: Device created
- *       500:
- *         description: Error saving device
+ *         description: A greeting message
  */
+app.get("/", (req, res) => {
+  res.send("Hello, World!");
+});
 
-// Define a POST route to add or update a device
+/**
+ * @openapi
+ * '/tracker':
+ *  post:
+ *     tags:
+ *     - User Controller
+ *     summary: Create a device
+ *     requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *           schema:
+ *            type: object
+ *            required:
+ *              - deviceId
+ *              - deviceName
+ *              - location
+ *            properties:
+ *              deviceId:
+ *                type: string
+ *                default: 123123
+ *              deviceName:
+ *                type: string
+ *                default: Samsung
+ *              location:
+ *                type: object
+ *                default: {
+ *
+ *                  coordinates: [-83.935242, 40.730610]
+ *                }
+ *     responses:
+ *      201:
+ *        description: Created
+ *      409:
+ *        description: Conflict
+ *      404:
+ *        description: Not Found
+ *      500:
+ *        description: Server Error
+ */
 app.post("/tracker", async (req, res) => {
   const { deviceId, deviceName, location } = req.body;
   location.type = "Point";
@@ -104,11 +122,6 @@ app.post("/tracker", async (req, res) => {
   } catch (error) {
     return res.status(500).json({ message: "Error saving device", error });
   }
-});
-
-// Define a route
-app.get("/", (req, res) => {
-  res.send("Hello, World!");
 });
 
 // Start the server
