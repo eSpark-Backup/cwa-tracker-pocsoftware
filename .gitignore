@@ -1,0 +1,6 @@
+
+### Example of `.gitignore` file:
+```plaintext
+# Node.js dependencies
+node_modules/
+```
