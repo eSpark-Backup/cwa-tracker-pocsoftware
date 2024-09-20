@@ -6,6 +6,7 @@ const swaggerJsDoc = require("swagger-jsdoc");
 require("dotenv").config(); // Load environment variables
 const Tracker = require("./tracker.schema.js");
 const jwt = require("jsonwebtoken"); // Import JWT
+const cors = require("cors"); // Import CORS
 
 // Swagger setup
 const swaggerOptions = {
@@ -31,6 +32,9 @@ const app = express(); // Initialize Express
 // Middleware to parse JSON bodies
 app.use(express.json()); // Parse JSON requests
 
+// Use CORS middleware to allow all origins and methods
+app.use(cors());
+
 // Use Swagger UI
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs)); // Serve Swagger UI
 
@@ -50,6 +54,7 @@ mongoose
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
+  name: { type: String, required: true },
 });
 
 const User = mongoose.model("User", userSchema); // Create User model
@@ -235,7 +240,7 @@ app.post("/login", async (req, res) => {
     return res.status(200).json({
       Action: "User logged in",
       timestamp: new Date().toISOString(),
-      data: { token },
+      data: { token, name: user.name, email: user.email },
     });
   } catch (error) {
     return res.status(500).json({ message: "Error logging in", error });
