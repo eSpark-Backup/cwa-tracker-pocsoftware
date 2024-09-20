@@ -5,6 +5,7 @@ const swaggerUi = require("swagger-ui-express");
 const swaggerJsDoc = require("swagger-jsdoc");
 require("dotenv").config(); // Load environment variables
 const Tracker = require("./tracker.schema.js");
+const jwt = require("jsonwebtoken"); // Import JWT
 
 // Swagger setup
 const swaggerOptions = {
@@ -44,6 +45,14 @@ mongoose
   })
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
+
+// Define User Schema
+const userSchema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+});
+
+const User = mongoose.model("User", userSchema); // Create User model
 
 // Define a route
 /**
@@ -121,6 +130,115 @@ app.post("/tracker", async (req, res) => {
     }
   } catch (error) {
     return res.status(500).json({ message: "Error saving device", error });
+  }
+});
+
+// // Define a route for signup
+// /**
+//  * @swagger
+//  * /signup:
+//  *   post:
+//  *     summary: User signup
+//  *     requestBody:
+//  *       required: true
+//  *       content:
+//  *         application/json:
+//  *           schema:
+//  *             type: object
+//  *             required:
+//  *               - email
+//  *               - password
+//  *             properties:
+//  *               email:
+//  *                 type: string
+//  *               password:
+//  *                 type: string
+//  *     responses:
+//  *       201:
+//  *         description: User created
+//  *       400:
+//  *         description: Bad Request
+//  *       500:
+//  *         description: Server Error
+//  */
+// app.post("/signup", async (req, res) => {
+//   const { email, password } = req.body;
+
+//   try {
+//     const newUser = new User({ email, password });
+//     await newUser.save();
+
+//     // Create JWT token
+//     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
+//       expiresIn: "1h",
+//     });
+
+//     return res.status(201).json({ message: "User created", token });
+//   } catch (error) {
+//     return res.status(500).json({ message: "Error creating user", error });
+//   }
+// });
+
+// Define a route for login
+/**
+ * @swagger
+ * /login:
+ *   post:
+ *     tags:
+ *     - User Controller
+ *     summary: User login
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: "admin@chipworks.com"
+ *               password:
+ *                 type: string
+ *                 example: "chipworks"
+ *     responses:
+ *       200:
+ *         description: User logged in
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server Error
+ */
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    // Here you should compare the password with a hashed version
+    // For simplicity, assuming plain text for now
+    if (user.password !== password) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    // Create JWT token
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    return res.status(200).json({
+      Action: "User logged in",
+      timestamp: new Date().toISOString(),
+      data: { token },
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Error logging in", error });
   }
 });
 
