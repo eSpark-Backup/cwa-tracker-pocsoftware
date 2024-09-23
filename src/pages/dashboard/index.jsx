@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { TrackerMap } from "../../components";
 import { useTranslation } from "react-i18next";
+import { getGregorianDate, getHijriDate } from "../../utils";
 
 const trackers = [
   { id: 1, name: "Tracker 1", position: { lat: 51.505, lng: -0.09 } },
@@ -11,7 +12,7 @@ const trackers = [
 
 const containerStyle = {
   width: "100%",
-  height: "500px",
+  height: "460px",
 };
 
 const center = {
@@ -22,31 +23,61 @@ const center = {
 const Dashboard = () => {
   const { t } = useTranslation();
   const [selectedTracker, setSelectedTracker] = useState(trackers[0].id);
+  const [selectedLayer, setSelectedLayer] = useState("");
 
   return (
     <div className="main">
-      <div className="list-box">
-        <h3 className="heading">{t("trackers")}</h3>
-        <ul>
-          {trackers.map((tracker) => (
-            <li
-              key={tracker.id}
-              onClick={() => setSelectedTracker(tracker.id)}
-              className={selectedTracker === tracker.id ? "active" : ""}
-            >
-              {tracker.name}
-            </li>
-          ))}
-        </ul>
+      <div className="sub-header">
+        <div className="dates">
+          <div>
+            <p>{t("gregorian_date")}: </p>
+            <p>{getGregorianDate()}</p>
+          </div>
+          <div>
+            <p>{t("hijri_date")}: </p>
+            <p>{getHijriDate()}</p>
+          </div>
+        </div>
+        <div className="weather-tabs">
+          <div
+            className={selectedLayer === "humidity" ? "active" : ""}
+            onClick={() => setSelectedLayer("humidity")}
+          >
+            {t("humidity")}
+          </div>
+          <div
+            className={selectedLayer === "wind" ? "active" : ""}
+            onClick={() => setSelectedLayer("wind")}
+          >
+            {t("wind")}
+          </div>
+        </div>
       </div>
+      <div className="grid">
+        <div className="list-box">
+          <h3 className="heading">{t("trackers")}</h3>
+          <ul>
+            {trackers.map((tracker) => (
+              <li
+                key={tracker.id}
+                onClick={() => setSelectedTracker(tracker.id)}
+                className={selectedTracker === tracker.id ? "active" : ""}
+              >
+                {tracker.name}
+              </li>
+            ))}
+          </ul>
+        </div>
 
-      <div className="map-box">
-        <TrackerMap
-          trackers={trackers}
-          selectedTracker={selectedTracker}
-          containerStyle={containerStyle}
-          center={center}
-        />
+        <div className="map-box">
+          <TrackerMap
+            selectedLayer={selectedLayer}
+            trackers={trackers}
+            selectedTracker={selectedTracker}
+            containerStyle={containerStyle}
+            center={center}
+          />
+        </div>
       </div>
     </div>
   );

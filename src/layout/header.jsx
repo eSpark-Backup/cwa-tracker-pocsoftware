@@ -46,7 +46,7 @@ const Header = () => {
 
   return (
     <div className="header">
-      <p className="logo">{t("logo")}</p>
+      <img className="logo" src="/logo.png" alt="logo" />
       <div className="right-content">
         <div ref={popupRef} className="flag">
           <img
@@ -93,7 +93,7 @@ const Header = () => {
               style={{ display: openLogout ? "flex" : "none" }}
               className="logout-popup"
             >
-              <p onClick={handleLogout}>Log Out</p>
+              <p onClick={handleLogout}>{t("logout")}</p>
             </div>
           </div>
         )}

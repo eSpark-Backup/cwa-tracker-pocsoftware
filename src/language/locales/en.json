@@ -4,5 +4,11 @@
     "sign_in": "Sign in",
     "email": "Email",
     "password": "Password",
-    "trackers": "Trackers"
+    "trackers": "Trackers",
+    "humidity": "Humidity",
+    "wind": "Wind",
+    "logout": "Log Out",
+    "loading": "Loading",
+    "gregorian_date": "Gregorian Date",
+    "hijri_date": "Hijri Date"
 }

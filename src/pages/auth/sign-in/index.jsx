@@ -51,7 +51,7 @@ const SignIn = () => {
     <div className="auth-container">
       <div className="auth-box">
         <div className="auth-side">
-          <p className="auth-logo">{t("logo")}</p>
+          <img className="auth-logo" src="/logo.png" alt="logo" />
           <p className="auth-text">{t("auth_login_text")}</p>
         </div>
         <div className="auth-form">
@@ -73,7 +73,7 @@ const SignIn = () => {
               type="password"
               required
             />
-            <Button loading={isLoading} type="submit">
+            <Button isLoading={isLoading} type="submit">
               {t("sign_in")}
             </Button>
           </form>
