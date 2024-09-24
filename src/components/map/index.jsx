@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { useRef } from "react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import "leaflet.heat";
+
+import HeatmapLayer from "./heatMapLayer";
+import WindLayer from "./windLayer";
 
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
@@ -14,18 +16,6 @@ L.Icon.Default.mergeOptions({
   iconRetinaUrl: markerIcon2x,
   shadowUrl: markerShadow,
 });
-
-const HeatmapLayer = ({ data }) => {
-  const map = useMap();
-
-  L.heatLayer(data, {
-    radius: 25,
-    blur: 25,
-    maxZoom: 10,
-  }).addTo(map);
-
-  return null;
-};
 
 const TrackerMap = ({
   trackers,
@@ -40,13 +30,31 @@ const TrackerMap = ({
     1,
   ]);
 
+  const mapRef = useRef(null);
+
   return (
-    <MapContainer center={center} zoom={13} style={containerStyle}>
+    <MapContainer
+      center={center}
+      zoom={13}
+      style={containerStyle}
+      whenReady={(mapInstance) => {
+        mapRef.current = mapInstance.target;
+      }}
+    >
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution="© OpenStreetMap contributors"
       />
       <HeatmapLayer data={heatData} />
+      {selectedLayer === "wind" && <WindLayer map={mapRef.current} />}
+      {selectedLayer === "temp" && (
+        <TileLayer
+          url={`https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=${
+            import.meta.env.VITE_OPEN_WEATHER_API_KEY
+          }`}
+          attribution='&copy; <a href="https://openweathermap.org/">OpenWeatherMap</a>'
+        />
+      )}
       {trackers.map((tracker) => (
         <Marker
           key={tracker.id}

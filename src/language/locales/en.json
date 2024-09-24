@@ -1,11 +1,11 @@
 {
     "logo": "Logo",
-    "auth_login_text": "Sign in from here",
+    "auth_login_text": "Sign in from here>",
     "sign_in": "Sign in",
     "email": "Email",
     "password": "Password",
     "trackers": "Trackers",
-    "humidity": "Humidity",
+    "temp": "Temp",
     "wind": "Wind",
     "logout": "Log Out",
     "loading": "Loading",

@@ -39,15 +39,23 @@ const Dashboard = () => {
           </div>
         </div>
         <div className="weather-tabs">
-          <div
-            className={selectedLayer === "humidity" ? "active" : ""}
-            onClick={() => setSelectedLayer("humidity")}
+        <div
+            className={selectedLayer === "temp" ? "active" : ""}
+            onClick={
+              selectedLayer === "temp"
+                ? () => setSelectedLayer("")
+                : () => setSelectedLayer("temp")
+            }
           >
-            {t("humidity")}
+            {t("temp")}
           </div>
           <div
             className={selectedLayer === "wind" ? "active" : ""}
-            onClick={() => setSelectedLayer("wind")}
+            onClick={
+              selectedLayer === "wind"
+                ? () => setSelectedLayer("")
+                : () => setSelectedLayer("wind")
+            }
           >
             {t("wind")}
           </div>
