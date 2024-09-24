@@ -397,7 +397,7 @@ app.post("/verify-token", async (req, res) => {
     if (!user || !user.secret) {
       return res
         .status(401)
-        .json({ message: "Invalid email or secret not found" });
+        .json({ message: "Invalid request or secret not found" });
     }
 
     const isValid = otplib.authenticator.check(token, user.secret);
