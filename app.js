@@ -7,6 +7,9 @@ require("dotenv").config(); // Load environment variables
 const Tracker = require("./tracker.schema.js");
 const jwt = require("jsonwebtoken"); // Import JWT
 const cors = require("cors"); // Import CORS
+const helmet = require("helmet");
+const otplib = require("otplib"); // Ensure you have otplib installed
+const qrcode = require("qrcode"); // Ensure you have qrcode installed
 
 // Swagger setup
 const swaggerOptions = {
@@ -32,8 +35,21 @@ const app = express(); // Initialize Express
 // Middleware to parse JSON bodies
 app.use(express.json()); // Parse JSON requests
 
-// Use CORS middleware to allow all origins and methods
-app.use(cors());
+// Determine the environment
+const isProduction = process.env.NODE_ENV === "production";
+console.log(process.env.NODE_ENV);
+
+// Use CORS middleware with environment-specific settings
+app.use(
+  cors({
+    origin: isProduction ? process.env.HTTPS_URL : process.env.HTTP_URL, // Use HTTP_URL for development
+    methods: ["GET", "POST", "PUT", "DELETE"], // Specify allowed methods
+    allowedHeaders: ["Content-Type", "Authorization"], // Specify allowed headers
+  })
+);
+
+// Use Helmet middleware
+app.use(helmet());
 
 // Use Swagger UI
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs)); // Serve Swagger UI
@@ -55,6 +71,8 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   name: { type: String, required: true },
+  secret: { type: String, required: false },
+  is2FAEnabled: { type: Boolean, default: false },
 });
 
 const User = mongoose.model("User", userSchema); // Create User model
@@ -138,51 +156,55 @@ app.post("/tracker", async (req, res) => {
   }
 });
 
-// // Define a route for signup
-// /**
-//  * @swagger
-//  * /signup:
-//  *   post:
-//  *     summary: User signup
-//  *     requestBody:
-//  *       required: true
-//  *       content:
-//  *         application/json:
-//  *           schema:
-//  *             type: object
-//  *             required:
-//  *               - email
-//  *               - password
-//  *             properties:
-//  *               email:
-//  *                 type: string
-//  *               password:
-//  *                 type: string
-//  *     responses:
-//  *       201:
-//  *         description: User created
-//  *       400:
-//  *         description: Bad Request
-//  *       500:
-//  *         description: Server Error
-//  */
-// app.post("/signup", async (req, res) => {
-//   const { email, password } = req.body;
+// Define a route for signup
+/**
+ * @swagger
+ * /signup:
+ *   post:
+ *     tags:
+ *     - User Controller
+ *     summary: User signup
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               name:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: User created
+ *       400:
+ *         description: Bad Request
+ *       500:
+ *         description: Server Error
+ */
+app.post("/signup", async (req, res) => {
+  const { email, password, name } = req.body;
 
-//   try {
-//     const newUser = new User({ email, password });
-//     await newUser.save();
+  try {
+    const newUser = new User({ email, password, name });
+    await newUser.save();
 
-//     // Create JWT token
-//     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
-//       expiresIn: "1h",
-//     });
+    // Create JWT token
+    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
 
-//     return res.status(201).json({ message: "User created", token });
-//   } catch (error) {
-//     return res.status(500).json({ message: "Error creating user", error });
-//   }
-// });
+    return res.status(201).json({ message: "User created", token });
+  } catch (error) {
+    return res.status(500).json({ message: "Error creating user", error });
+  }
+});
 
 // Define a route for login
 /**
@@ -240,10 +262,141 @@ app.post("/login", async (req, res) => {
     return res.status(200).json({
       Action: "User logged in",
       timestamp: new Date().toISOString(),
-      data: { token, name: user.name, email: user.email },
+      data: {
+        token,
+        name: user.name,
+        email: user.email,
+        is2FAEnabled: user.is2FAEnabled,
+      },
     });
   } catch (error) {
     return res.status(500).json({ message: "Error logging in", error });
+  }
+});
+
+// Define the generateQRCode endpoint
+/**
+ * @swagger
+ * /generate-qr:
+ *   post:
+ *     tags:
+ *     - User Controller
+ *     summary: Generate QR code for 2FA
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: "user@example.com"
+ *     responses:
+ *       200:
+ *         description: QR code generated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 secret:
+ *                   type: string
+ *                 qrCode:
+ *                   type: string
+ *       500:
+ *         description: Error generating QR code
+ */
+const generateQRCode = async (req, res) => {
+  try {
+    // Generate a secret
+    const secret = otplib.authenticator.generateSecret();
+
+    // Create otpauth URL for QR code scanning
+    const otpauthUrl = otplib.authenticator.keyuri(
+      req.body.email,
+      process.env.ISSUER,
+      secret
+    );
+    await User.updateOne(
+      { email: req.body.email },
+      { $set: { secret, is2FAEnabled: true } }
+    );
+
+    // Generate QR code from otpauth URL
+    const qrCode = await qrcode.toDataURL(otpauthUrl);
+
+    // Return the secret and QR code
+    return res.json({
+      message: "QR code generated successfully",
+      secret, // Store this secret in your database for verification
+      qrCode, // This can be displayed in the frontend
+    });
+  } catch (error) {
+    return res.status(500).json({ error: "Error generating QR code" });
+  }
+};
+
+// Add the endpoint to your Express app
+app.post("/generate-qr", generateQRCode);
+
+// Define a route for verifying the token
+/**
+ * @swagger
+ * /verify-token:
+ *   post:
+ *     tags:
+ *     - User Controller
+ *     summary: Verify token for 2FA
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - token
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: "user@example.com"
+ *               token:
+ *                 type: string
+ *                 example: "123456"
+ *     responses:
+ *       200:
+ *         description: Token verified successfully
+ *       401:
+ *         description: Invalid token
+ *       500:
+ *         description: Error verifying token
+ */
+app.post("/verify-token", async (req, res) => {
+  const { email, token } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user || !user.secret) {
+      return res
+        .status(401)
+        .json({ message: "Invalid email or secret not found" });
+    }
+
+    const isValid = otplib.authenticator.check(token, user.secret);
+
+    if (isValid) {
+      return res.status(200).json({ message: "Token verified successfully" });
+    } else {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+  } catch (error) {
+    return res.status(500).json({ message: "Error verifying token", error });
   }
 });
 
