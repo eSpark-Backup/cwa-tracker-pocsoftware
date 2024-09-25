@@ -54,8 +54,8 @@ app.use(helmet());
 // Use Swagger UI
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs)); // Serve Swagger UI
 
-// Define a port
-const port = 3000;
+// Define a port from env file
+const port = process.env.PORT || 3000;
 
 // Connect to MongoDB
 mongoose
