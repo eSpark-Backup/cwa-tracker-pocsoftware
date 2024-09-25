@@ -1,6 +1,6 @@
 import { Navigate, useRoutes } from "react-router-dom";
 import MainLayout from "../layout";
-import { SignIn, Dashboard } from "../pages";
+import { SignIn, SignUp, FAuth,  Dashboard } from "../pages";
 
 const Routes = () => {
   return useRoutes([
@@ -13,6 +13,8 @@ const Routes = () => {
       ],
     },
     { path: "/sign-in", element: <SignIn /> },
+    { path: "/sign-up", element: <SignUp /> },
+    { path: "/2fa", element: <FAuth /> },
     {
       path: "*",
       element: <Navigate to="/" />,

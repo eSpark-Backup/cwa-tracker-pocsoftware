@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
-import { Button, TextInput } from "../../../components";
+import { AuthBox, Button, TextInput } from "../../../components";
 import { useLoginMutation } from "../../../services/auth";
 import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { loginAction } from "../../../store/slices/auth";
 
 const SignIn = () => {
+  const dispatch = useDispatch();
   const token = localStorage.getItem("token");
 
   if (token) {
@@ -36,50 +39,67 @@ const SignIn = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    const result = await login(form);
-    if (result?.data) {
-      toast.success("Login successfull");
-      navigate("/dashboard");
-      setForm({
-        email: "",
-        password: "",
-      });
-    }
+    await login(form).then((res) => {
+      if (res?.data) {
+        if (res?.data?.data?.is2FAEnabled) {
+          const authObj = {
+            user: {
+              name: res?.data?.data?.name,
+              email: res?.data?.data?.email,
+            },
+            token: res?.data?.data?.token,
+          };
+          dispatch(loginAction(authObj));
+          setForm({
+            email: "",
+            password: "",
+          });
+          toast.success("Login successfull");
+          navigate("/dashboard");
+        } else {
+          setForm({
+            email: "",
+            password: "",
+          });
+          navigate(
+            `/2fa?email=${res?.data?.data?.email}&token=${res?.data?.data?.token}&name=${res?.data?.data?.name}`
+          );
+        }
+      }
+    });
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-box">
-        <div className="auth-side">
-          <img className="auth-logo" src="/logo.png" alt="logo" />
-          <p className="auth-text">{t("auth_login_text")}</p>
-        </div>
-        <div className="auth-form">
-          <form onSubmit={handleLogin}>
-            <p className="auth-heading">{t("sign_in")}</p>
-            <TextInput
-              label={t("email")}
-              name="email"
-              handleChange={handleChange}
-              value={form.email}
-              type="email"
-              required
-            />
-            <TextInput
-              label={t("password")}
-              name="password"
-              handleChange={handleChange}
-              value={form.password}
-              type="password"
-              required
-            />
-            <Button isLoading={isLoading} type="submit">
-              {t("sign_in")}
-            </Button>
-          </form>
-        </div>
-      </div>
-    </div>
+    <AuthBox title={t("auth_login_text")}>
+      <form onSubmit={handleLogin}>
+        <p className="auth-heading">{t("sign_in")}</p>
+        <TextInput
+          label={t("email")}
+          name="email"
+          handleChange={handleChange}
+          value={form.email}
+          type="email"
+          required
+        />
+        <TextInput
+          label={t("password")}
+          name="password"
+          handleChange={handleChange}
+          value={form.password}
+          type="password"
+          required
+        />
+        <Button isLoading={isLoading} type="submit">
+          {t("sign_in")}
+        </Button>
+        <Link
+          style={{ width: "100%", color: "#000", marginTop: "-20px" }}
+          to="/sign-up"
+        >
+          {t("create_new_acc")}
+        </Link>
+      </form>
+    </AuthBox>
   );
 };
 

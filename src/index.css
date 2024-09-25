@@ -302,6 +302,7 @@ img.auth-logo {
 
 p.auth-text {
   font-size: 20px;
+  text-align: center;
 }
 
 p.auth-heading {
@@ -311,6 +312,10 @@ p.auth-heading {
 
 .input {
   width: 100%;
+}
+
+.qr-code {
+  width: 150px;
 }
 
 .input input {
