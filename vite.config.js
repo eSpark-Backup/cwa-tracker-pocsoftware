@@ -7,8 +7,12 @@ export default ({ mode }) => {
   return defineConfig({
     plugins: [react()],
     server: {
-      host: "localhost",
-      port: 3001,
+      watch: {
+        usePolling: true,
+      },
+      host: true,
+      strictPort: true,
+      port: 8080,
     },
   });
 };
