@@ -48,6 +48,14 @@ body > #root {
   background: #555;
 }
 
+.ar {
+  text-align: right;
+}
+
+.en {
+  text-align: left;
+}
+
 .main {
   padding: 30px;
   width: 100%;
@@ -238,7 +246,7 @@ p.avatar {
 }
 
 .flag {
-  width: 35px;
+  width: 45px;
   height: 30px;
   cursor: pointer;
   position: relative;
@@ -298,11 +306,6 @@ p.avatar {
 img.auth-logo {
   width: 150px;
   height: auto;
-}
-
-p.auth-text {
-  font-size: 20px;
-  text-align: center;
 }
 
 p.auth-heading {

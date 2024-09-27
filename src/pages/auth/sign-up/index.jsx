@@ -52,7 +52,7 @@ const SignUp = () => {
   };
 
   return (
-    <AuthBox title={t("auth_signup_text")}>
+    <AuthBox>
       <form onSubmit={handleSignup}>
         <p className="auth-heading">{t("sign_up")}</p>
         <TextInput

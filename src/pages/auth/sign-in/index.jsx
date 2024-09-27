@@ -70,7 +70,7 @@ const SignIn = () => {
   };
 
   return (
-    <AuthBox title={t("auth_login_text")}>
+    <AuthBox>
       <form onSubmit={handleLogin}>
         <p className="auth-heading">{t("sign_in")}</p>
         <TextInput

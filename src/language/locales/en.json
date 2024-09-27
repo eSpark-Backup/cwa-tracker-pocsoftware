@@ -1,8 +1,5 @@
 {
     "logo": "Logo",
-    "auth_login_text": "Sign in from here",
-    "auth_signup_text": "Sign up from here",
-    "auth_fa_text": "Scan your QR code from here",
     "sign_in": "Sign in",
     "sign_up": "Sign up",
     "scan_code": "Scan code",

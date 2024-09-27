@@ -1,22 +1,20 @@
-import { Provider } from "react-redux";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import store from "./store";
 import Header from "./layout/header";
 import Routes from "./route/index";
 import "./language/i18n";
+import { useSelector } from "react-redux";
 
 const App = () => {
+  const language = useSelector(state => state.language)
   return (
     <>
-      <Provider store={store}>
-        <div className="main-layout">
-          <Header />
-          <div className="layout">
-            <Routes />
-          </div>
+      <div className={`main-layout ${language}`}>
+        <Header />
+        <div className="layout">
+          <Routes />
         </div>
-      </Provider>
+      </div>
       <ToastContainer
         position="top-right"
         autoClose={5000}

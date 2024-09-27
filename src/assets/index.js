@@ -1,4 +1,4 @@
-import arabicFlag from "./arabic-flag.svg";
-import englishFlag from "./english-flag.svg";
+import arabicFlag from "./arabic-flag.png";
+import englishFlag from "./english-flag.png";
 
 export { arabicFlag, englishFlag };

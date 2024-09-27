@@ -79,7 +79,7 @@ const FAuth = () => {
   };
 
   return (
-    <AuthBox title={t("auth_fa_text")}>
+    <AuthBox>
       <form onSubmit={handleVerify}>
         <p className="auth-heading">{t("scan_code")}</p>
         {!isQRloading ? (
