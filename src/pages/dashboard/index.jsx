@@ -4,10 +4,10 @@ import { useTranslation } from "react-i18next";
 import { getGregorianDate, getHijriDate } from "../../utils";
 
 const trackers = [
-  { id: 1, name: "Tracker 1", position: { lat: 51.505, lng: -0.09 } },
-  { id: 2, name: "Tracker 2", position: { lat: 51.515, lng: -0.1 } },
-  { id: 3, name: "Tracker 3", position: { lat: 51.525, lng: -0.12 } },
-  { id: 4, name: "Tracker 4", position: { lat: 51.535, lng: -0.14 } },
+  { id: 1, name: "Tracker 1", position: { lat: 21.492500, lng: 39.177570 } },
+  { id: 2, name: "Tracker 2", position: { lat: 24.774265, lng: 46.738586 } },
+  { id: 3, name: "Tracker 3", position: { lat: 24.470901, lng: 39.612236 } },
+  { id: 4, name: "Tracker 4", position: { lat: 21.422510, lng: 39.826168 } },
 ];
 
 const containerStyle = {
@@ -16,8 +16,8 @@ const containerStyle = {
 };
 
 const center = {
-  lat: 51.505,
-  lng: -0.09,
+  lat: 21.422510,
+  lng: 39.826168,
 };
 
 const Dashboard = () => {
@@ -39,25 +39,15 @@ const Dashboard = () => {
           </div>
         </div>
         <div className="weather-tabs">
-        <div
-            className={selectedLayer === "temp" ? "active" : ""}
-            onClick={
-              selectedLayer === "temp"
-                ? () => setSelectedLayer("")
-                : () => setSelectedLayer("temp")
-            }
-          >
-            {t("temp")}
-          </div>
           <div
-            className={selectedLayer === "wind" ? "active" : ""}
+            className={selectedLayer === "weather" ? "active" : ""}
             onClick={
-              selectedLayer === "wind"
+              selectedLayer === "weather"
                 ? () => setSelectedLayer("")
-                : () => setSelectedLayer("wind")
+                : () => setSelectedLayer("weather")
             }
           >
-            {t("wind")}
+            {t("weather")}
           </div>
         </div>
       </div>
