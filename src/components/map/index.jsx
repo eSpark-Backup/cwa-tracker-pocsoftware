@@ -9,6 +9,7 @@ import { useCallback, useRef, useState, useEffect } from "react";
 const libraries = ["places", "visualization", "marker"];
 
 const TrackerMap = ({
+  isLoading,
   trackers,
   selectedTracker,
   containerStyle,
@@ -50,7 +51,7 @@ const TrackerMap = ({
   }
 
   return isLoaded ? (
-    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+    <div style={{ position: "relative", width: "100%", height: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>
       <GoogleMap
         mapContainerStyle={containerStyle}
         center={center}
@@ -61,7 +62,7 @@ const TrackerMap = ({
       >
         <HeatmapLayer data={heatData} options={{ radius: 20 }} />
 
-        {trackers.map((tracker) => (
+        {!isLoading && trackers.map((tracker) => (
           <Marker
             key={tracker.id}
             position={tracker.position}

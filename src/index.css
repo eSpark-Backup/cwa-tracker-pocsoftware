@@ -173,6 +173,13 @@ body > #root {
   color: #fff;
 }
 
+.no-trackers {
+  padding: 10px;
+  font-size: 22px;
+  font-weight: 600;
+  text-align: center;
+}
+
 .marker-icon {
   width: 24px;
   height: 41px;

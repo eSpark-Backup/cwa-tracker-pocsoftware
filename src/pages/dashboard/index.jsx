@@ -1,29 +1,57 @@
-import { useState } from "react";
-import { TrackerMap } from "../../components";
+import { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
+import { toast } from "react-toastify";
+import { TrackerMap } from "../../components";
 import { getGregorianDate, getHijriDate } from "../../utils";
-
-const trackers = [
-  { id: 1, name: "Tracker 1", position: { lat: 21.492500, lng: 39.177570 } },
-  { id: 2, name: "Tracker 2", position: { lat: 24.774265, lng: 46.738586 } },
-  { id: 3, name: "Tracker 3", position: { lat: 24.470901, lng: 39.612236 } },
-  { id: 4, name: "Tracker 4", position: { lat: 21.422510, lng: 39.826168 } },
-];
+import { useGetDevicesMutation } from "../../services/devices";
+import { logout } from "../../store/slices/auth";
 
 const containerStyle = {
   width: "100%",
   height: "460px",
 };
 
-const center = {
-  lat: 21.422510,
-  lng: 39.826168,
-};
-
 const Dashboard = () => {
   const { t } = useTranslation();
-  const [selectedTracker, setSelectedTracker] = useState(trackers[0].id);
+  const dispatch = useDispatch();
+  const [trackers, setTrackers] = useState([]);
+  const [selectedTracker, setSelectedTracker] = useState();
   const [selectedLayer, setSelectedLayer] = useState("");
+  const [center, setCenter] = useState({
+    lat: 21.422510,
+    lng: 39.826168,
+  })
+
+  const [getDevices, { isLoading, isError, error }] = useGetDevicesMutation();
+
+  useEffect(() => {
+    if (isError) {
+      console.log(error, 'eror')
+      if (error?.status === 401) {
+        toast.error("Session expired")
+        dispatch(logout())
+      } else {
+        toast.error(error?.data?.message || "Something went wrong");
+      }
+      return;
+    }
+  }, [isError]);
+
+  const fetchDevices = async () => {
+    await getDevices().then((res) => {
+      if (res?.data) {
+        const formattedData = res?.data?.items.map((item) => { return { id: item?.deviceId, name: item?.deviceName, position: { lat: item?.location?.coordinates[0], lng: item?.location?.coordinates[1] } } })
+        setTrackers(formattedData)
+        setSelectedTracker(formattedData[0].id)
+        setCenter(formattedData[0].position)
+      }
+    })
+  }
+
+  useEffect(() => {
+    fetchDevices()
+  }, [])
 
   return (
     <div className="main">
@@ -55,7 +83,7 @@ const Dashboard = () => {
         <div className="list-box">
           <h3 className="heading">{t("trackers")}</h3>
           <ul>
-            {trackers.map((tracker) => (
+            {isLoading ? <p className="no-trackers">Loading</p> : trackers.length > 0 ? trackers.map((tracker) => (
               <li
                 key={tracker.id}
                 onClick={() => setSelectedTracker(tracker.id)}
@@ -63,12 +91,14 @@ const Dashboard = () => {
               >
                 {tracker.name}
               </li>
-            ))}
+            ))
+              : <p className="no-trackers">No Devices Found</p>}
           </ul>
         </div>
 
         <div className="map-box">
           <TrackerMap
+            isLoading={isLoading}
             selectedLayer={selectedLayer}
             trackers={trackers}
             selectedTracker={selectedTracker}
