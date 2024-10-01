@@ -14,5 +14,9 @@ export default ({ mode }) => {
       strictPort: true,
       port: 8080,
     },
+    preview: {
+      host: true,
+      port: 8081
+    }
   });
 };
