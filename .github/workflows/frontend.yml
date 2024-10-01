@@ -1,0 +1,23 @@
+name: CWA-Tracker Frontend CICD
+
+on:
+  push:
+    branches: [ "fe" ]
+
+
+jobs:
+  deploy:
+    runs-on: cwa-runner
+
+    steps:
+
+    - name: Checkout source repository
+      uses: actions/checkout@v4
+
+
+    - name: Deploy Docker Container     
+      run: |
+        docker stop cwa-poc-fe
+        docker rm cwa-poc-fe
+        docker build . -t tracker-frontend:latest
+        docker run -d -p 3000:8080 --name cwa-poc-fe tracker-frontend:latest
