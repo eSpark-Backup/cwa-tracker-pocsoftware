@@ -450,7 +450,7 @@ button.btn {
     max-height: 500px;
   }
   .map-box {
-    min-height: auto;
+    min-height: 320px;
   }
   .auth-box {
     flex-direction: column;

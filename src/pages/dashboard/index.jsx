@@ -9,7 +9,7 @@ import { logout } from "../../store/slices/auth";
 
 const containerStyle = {
   width: "100%",
-  height: "460px",
+  height: "100%",
 };
 
 const Dashboard = () => {
@@ -27,7 +27,6 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (isError) {
-      console.log(error, 'eror')
       if (error?.status === 401) {
         toast.error("Session expired")
         dispatch(logout())
