@@ -14,6 +14,7 @@ const trackerSchema = new mongoose.Schema(
       },
       coordinates: { type: [Number], required: true }, // [longitude, latitude]
     },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // Link to User
   },
   { timestamps: true }
 ); // Include timestamps
@@ -21,4 +22,4 @@ const trackerSchema = new mongoose.Schema(
 // Create the Tracker model
 const Tracker = mongoose.model("Tracker", trackerSchema);
 
-module.exports = Tracker; // {{ edit_1 }}
+module.exports = Tracker; // {{ edit_2 }}

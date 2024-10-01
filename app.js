@@ -10,7 +10,8 @@ const cors = require("cors"); // Import CORS
 const helmet = require("helmet");
 const otplib = require("otplib"); // Ensure you have otplib installed
 const qrcode = require("qrcode"); // Ensure you have qrcode installed
-
+const { generateToken, authenticateUser } = require("./authenticator"); // Import the authenticator
+const { paginate } = require("./utils/functions"); // Import the paginate function
 // Swagger setup
 const swaggerOptions = {
   swaggerDefinition: {
@@ -25,6 +26,15 @@ const swaggerOptions = {
         url: "http://localhost:3000",
       },
     ],
+    components: {
+      securitySchemes: {
+        BearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
+      },
+    },
   },
   apis: ["./*.js"], // Matches all .js files in the current directory
 };
@@ -73,6 +83,7 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   secret: { type: String, required: false },
   is2FAEnabled: { type: Boolean, default: false },
+  devices: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tracker" }], // Link to Tracker
 });
 
 const User = mongoose.model("User", userSchema); // Create User model
@@ -92,12 +103,55 @@ app.get("/", (req, res) => {
 });
 
 /**
+ * @swagger
+ * /devices:
+ *   get:
+ *     tags:
+ *     - Device Controller
+ *     summary: Get devices for the authenticated user
+ *     security:
+ *      - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Devices retrieved successfully
+ *       404:
+ *         description: No devices found for the user
+ *       500:
+ *         description: Error retrieving devices
+ */
+app.get("/devices", authenticateUser, async (req, res) => {
+  const { page = 1, limit = 10 } = req.query; // Get page and limit from query parameters
+  const query = { user: req.user.id }; // Query to find devices for the authenticated user
+
+  try {
+    const paginatedDevices = await paginate(
+      Tracker,
+      parseInt(page),
+      parseInt(limit),
+      query
+    );
+
+    if (!paginatedDevices.items.length) {
+      return res
+        .status(404)
+        .json({ message: "No devices found for this user." });
+    }
+
+    return res.status(200).json(paginatedDevices);
+  } catch (error) {
+    return res.status(500).json({ message: "Error retrieving devices", error });
+  }
+});
+
+/**
  * @openapi
  * '/tracker':
  *  post:
  *     tags:
  *     - User Controller
  *     summary: Create a device
+ *     security:
+ *      - BearerAuth: []
  *     requestBody:
  *      required: true
  *      content:
@@ -131,21 +185,36 @@ app.get("/", (req, res) => {
  *      500:
  *        description: Server Error
  */
-app.post("/tracker", async (req, res) => {
+app.post("/tracker", authenticateUser, async (req, res) => {
   const { deviceId, deviceName, location } = req.body;
   location.type = "Point";
 
   try {
-    const existingDevice = await Tracker.findOne({ deviceId });
+    // Check if the device already exists for the user
+
+    const existingDevice = await Tracker.findOne({
+      deviceId,
+    });
 
     if (existingDevice) {
+      if (existingDevice.user._id.toString() !== req.user.id) {
+        return res.status(403).json({
+          message:
+            "This device belongs to another user. Please use a different device or login to your own account.",
+        });
+      }
       existingDevice.location = location;
       await existingDevice.save();
       return res
         .status(200)
         .json({ message: "Device location updated", device: existingDevice });
     } else {
-      const newDevice = new Tracker({ deviceId, deviceName, location });
+      const newDevice = new Tracker({
+        deviceId,
+        deviceName,
+        location,
+        user: req.user.id,
+      });
       await newDevice.save();
       return res
         .status(201)
@@ -201,9 +270,7 @@ app.post("/signup", async (req, res) => {
     await newUser.save();
 
     // Create JWT token
-    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
+    const token = generateToken(newUser._id);
 
     return res.status(201).json({
       message: "User created",
@@ -267,9 +334,7 @@ app.post("/login", async (req, res) => {
     }
 
     // Create JWT token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
+    const token = generateToken(user._id);
 
     return res.status(200).json({
       Action: "User logged in",
