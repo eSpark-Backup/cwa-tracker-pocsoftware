@@ -1,0 +1,23 @@
+name: CWA-Tracker Backend CICD
+
+on:
+  push:
+    branches: [ "be" ]
+
+
+jobs:
+  deploy:
+    runs-on: cwa-runner
+
+    steps:
+
+    - name: Checkout source repository
+      uses: actions/checkout@v4
+
+
+    - name: Deploy Docker Container     
+      run: |
+        docker stop cwa-poc-be
+        docker rm cwa-poc-be
+        docker build . -t tracker-backend:latest
+        docker run -d -p 3001:3000 --name cwa-poc-be tracker-backend:latest
