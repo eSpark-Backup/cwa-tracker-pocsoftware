@@ -20,4 +20,4 @@ jobs:
         docker stop cwa-poc-fe
         docker rm cwa-poc-fe
         docker build . -t tracker-frontend:latest
-        docker run -d -p 3000:8080 --name cwa-poc-fe tracker-frontend:latest
+        docker run -d -p 3000:8081 --name cwa-poc-fe tracker-frontend:latest
