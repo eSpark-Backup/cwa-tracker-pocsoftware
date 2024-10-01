@@ -25,6 +25,9 @@ const swaggerOptions = {
       {
         url: "http://localhost:3000",
       },
+      {
+        url: "https://api.chipworksarabia.com",
+      },
     ],
     components: {
       securitySchemes: {
