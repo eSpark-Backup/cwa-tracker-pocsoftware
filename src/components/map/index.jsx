@@ -57,6 +57,19 @@ const TrackerMap = ({
         mapContainerStyle={containerStyle}
         center={center}
         zoom={5}
+        options={{
+          minZoom: 3,
+          maxZoom: 15,
+          restriction: {
+            latLngBounds: {
+              north: 85,
+              south: -85,
+              east: 180,
+              west: -180,
+            },
+            strictBounds: false,
+          },
+        }}
         onLoad={onLoad}
         onUnmount={onUnmount}
         mapId={import.meta.env.VITE_GOOGLE_MAP_ID}
