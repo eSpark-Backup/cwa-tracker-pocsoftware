@@ -39,6 +39,10 @@ const SignIn = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (form.password.length < 6) {
+      toast.error("Please enter atleast 6 characters in password")
+      return;
+    }
     await login(form).then((res) => {
       if (res?.data) {
         if (res?.data?.data?.is2FAEnabled) {

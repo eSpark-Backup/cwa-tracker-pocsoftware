@@ -100,6 +100,7 @@ const Dashboard = () => {
             isLoading={isLoading}
             selectedLayer={selectedLayer}
             trackers={trackers}
+            setSelectedTracker={setSelectedTracker}
             selectedTracker={selectedTracker}
             containerStyle={containerStyle}
             center={center}

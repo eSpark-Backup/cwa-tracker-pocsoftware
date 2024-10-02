@@ -37,6 +37,14 @@ const SignUp = () => {
 
   const handleSignup = async (e) => {
     e.preventDefault();
+    if (form.name.length < 3) {
+      toast.error("Please enter atleast 3 characters in name")
+      return;
+    }
+    if (form.password.length < 6) {
+      toast.error("Please enter atleast 6 characters in password")
+      return;
+    }
     await singup(form).then((res) => {
       if (res?.data) {
         setForm({

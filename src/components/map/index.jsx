@@ -4,7 +4,7 @@ import {
   Marker,
   useJsApiLoader,
 } from "@react-google-maps/api";
-import { useCallback, useRef, useState, useEffect } from "react";
+import { useCallback, useRef, useState } from "react";
 
 const libraries = ["places", "visualization", "marker"];
 
@@ -12,6 +12,7 @@ const TrackerMap = ({
   isLoading,
   trackers,
   selectedTracker,
+  setSelectedTracker,
   containerStyle,
   center,
   selectedLayer,
@@ -64,6 +65,7 @@ const TrackerMap = ({
 
         {!isLoading && trackers.map((tracker) => (
           <Marker
+            onClick={() => setSelectedTracker(tracker.id)}
             key={tracker.id}
             position={tracker.position}
             icon={{
