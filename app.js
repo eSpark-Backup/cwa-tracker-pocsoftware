@@ -402,10 +402,7 @@ const generateQRCode = async (req, res) => {
       process.env.ISSUER,
       secret
     );
-    await User.updateOne(
-      { email: req.body.email },
-      { $set: { secret, is2FAEnabled: true } }
-    );
+    await User.updateOne({ email: req.body.email }, { $set: { secret } });
 
     // Generate QR code from otpauth URL
     const qrCode = await qrcode.toDataURL(otpauthUrl);
@@ -471,6 +468,9 @@ app.post("/verify-token", async (req, res) => {
     const isValid = otplib.authenticator.check(token, user.secret);
 
     if (isValid) {
+      user.is2FAEnabled = true;
+      await user.save();
+
       return res.status(200).json({ message: "Token verified successfully" });
     } else {
       return res.status(401).json({ message: "Invalid token" });
