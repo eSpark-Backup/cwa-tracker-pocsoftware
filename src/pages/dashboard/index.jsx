@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
@@ -15,9 +16,11 @@ const containerStyle = {
 const Dashboard = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [trackers, setTrackers] = useState([]);
   const [selectedTracker, setSelectedTracker] = useState();
   const [selectedLayer, setSelectedLayer] = useState("");
+  const [zoom, setZoom] = useState(5)
   const [center, setCenter] = useState({
     lat: 21.422510,
     lng: 39.826168,
@@ -30,6 +33,7 @@ const Dashboard = () => {
       if (error?.status === 401) {
         toast.error("Session expired")
         dispatch(logout())
+        navigate("/sign-in")
       } else {
         toast.error(error?.data?.message || "Something went wrong");
       }
@@ -104,6 +108,9 @@ const Dashboard = () => {
             selectedTracker={selectedTracker}
             containerStyle={containerStyle}
             center={center}
+            setCenter={setCenter}
+            zoom={zoom}
+            setZoom={setZoom}
           />
         </div>
       </div>

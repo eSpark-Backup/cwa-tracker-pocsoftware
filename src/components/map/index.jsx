@@ -4,7 +4,7 @@ import {
   Marker,
   useJsApiLoader,
 } from "@react-google-maps/api";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const libraries = ["places", "visualization", "marker"];
 
@@ -15,6 +15,9 @@ const TrackerMap = ({
   setSelectedTracker,
   containerStyle,
   center,
+  setCenter,
+  zoom,
+  setZoom,
   selectedLayer,
 }) => {
   const { isLoaded, loadError } = useJsApiLoader({
@@ -25,10 +28,103 @@ const TrackerMap = ({
 
   const markersRef = useRef([]);
   const [map, setMap] = useState(null);
+  const windyInstance = useRef(null);
 
   const onLoad = useCallback(function callback(map) {
     setMap(map);
+    loadWindyLayer();
   }, []);
+
+  const onDragEnd = useCallback(() => {
+    if (map) {
+      const newCenter = map.getCenter().toJSON();
+      setCenter(newCenter);
+    }
+  }, [map]);
+
+  const onZoomChanged = useCallback(() => {
+    if (map) {
+      const newZoom = map.getZoom();
+      setZoom(newZoom);
+      const newCenter = map.getCenter().toJSON();
+      setCenter(newCenter);
+    }
+  }, [map]);
+
+  const loadWindyLayer = () => {
+    const script = document.createElement("script");
+    script.src = "https://api.windy.com/assets/map-forecast/libBoot.js";
+    script.id = "windy-script";
+    script.async = true;
+    script.onload = () => {
+      const options = {
+        key: import.meta.env.VITE_WINDY_MAP_API,
+        lat: center.lat,
+        lon: center.lng,
+        zoom: zoom,
+      };
+      window.windyInit(options, (windy) => {
+        windyInstance.current = windy;
+        windy.map.setView([center.lat, center.lng], zoom);
+      });
+    };
+    document.body.appendChild(script);
+  };
+
+  useEffect(() => {
+    if (selectedLayer === "weather" && windyInstance.current) {
+      windyInstance.current.map.invalidateSize()
+    }
+  }, [windyInstance.current, selectedLayer])
+
+  useEffect(() => {
+    if (windyInstance.current && trackers.length > 0) {
+      trackers.forEach(tracker => {
+        const iconUrl = selectedTracker === tracker.id ? "/red-marker.png" : "/blue-marker.png";
+        const customIcon = L.icon({
+          iconUrl: iconUrl,
+          iconSize: [30, 30],
+          iconAnchor: [15, 30],
+          popupAnchor: [0, -30],
+        });
+        const marker = L.marker([tracker.position.lat, tracker.position.lng], { icon: customIcon }).addTo(windyInstance.current.map);
+        markersRef.current.push(marker);
+
+        marker.on('click', () => {
+          setSelectedTracker(tracker.id);
+        });
+      });
+    }
+  }, [trackers, windyInstance.current, selectedTracker])
+
+  useEffect(() => {
+    if (selectedLayer === "weather" && windyInstance.current) {
+      const windyMap = windyInstance.current.map;
+
+      const updateCenter = () => {
+        const newCenter = windyMap.getCenter();
+        setCenter({ lat: newCenter.lat, lng: newCenter.lng });
+      };
+
+      const updateZoom = () => {
+        setZoom(windyMap.getZoom());
+      };
+
+      windyMap.on('moveend', updateCenter);
+      windyMap.on('zoomend', updateZoom);
+
+      return () => {
+        windyMap.off('moveend', updateCenter);
+        windyMap.off('zoomend', updateZoom);
+      };
+    }
+  }, [selectedLayer, windyInstance.current]);
+
+  useEffect(() => {
+    if (selectedLayer !== "weather" && windyInstance.current) {
+      windyInstance.current.map.setView([center.lat, center.lng], zoom);
+    }
+  }, [selectedLayer, center, zoom]);
 
   const onUnmount = useCallback(function callback() {
     markersRef.current.forEach((marker) => marker.setMap(null));
@@ -56,10 +152,12 @@ const TrackerMap = ({
       <GoogleMap
         mapContainerStyle={containerStyle}
         center={center}
-        zoom={5}
+        onDragEnd={onDragEnd}
+        onZoomChanged={onZoomChanged}
+        zoom={zoom}
         options={{
           minZoom: 3,
-          maxZoom: 15,
+          maxZoom: 25,
           restriction: {
             latLngBounds: {
               north: 85,
@@ -90,21 +188,17 @@ const TrackerMap = ({
             }}
           />
         ))}
-        <iframe
-          src={`https://embed.windy.com/embed2.html?lat=${center.lat}&lon=${center.lng}&detailLat=${center.lat}&detailLon=${center.lng}&marker=false`}
-          style={{
-            display: selectedLayer === "weather" ? "block" : "none",
-            width: "100%",
-            height: "100%",
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            zIndex: 1,
-            border: "none",
-          }}
-        ></iframe>
       </GoogleMap>
+      <div id="windy" style={{
+        display: selectedLayer === "weather" ? "block" : "none",
+        width: "100%",
+        height: "100%",
+        position: "absolute",
+        top: "0",
+        left: "0",
+        zIndex: 1,
+        border: "none",
+      }}></div>
     </div>
   ) : (
     <div>Loading...</div>

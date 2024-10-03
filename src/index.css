@@ -441,6 +441,26 @@ button.btn {
   background: #0000002b;
 }
 
+#windy #bottom {
+  display: none;
+}
+
+#windy #logo-wrapper {
+  display: none;
+}
+
+#plugin-menu .plugin-content #layers-levels {
+  display: none;
+}
+
+#plugin-menu .build-info {
+  display: none;
+}
+
+#windy #embed-zoom {
+  display: none;
+}
+
 @media only screen and (max-width: 768px) {
   .grid {
     grid-template-columns: 1fr;
@@ -462,5 +482,8 @@ button.btn {
   }
   .auth-form {
     width: 100%;
+  }
+  .sub-header {
+    height: auto;
   }
 }
