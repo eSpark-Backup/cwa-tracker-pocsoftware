@@ -12,6 +12,8 @@ const otplib = require("otplib"); // Ensure you have otplib installed
 const qrcode = require("qrcode"); // Ensure you have qrcode installed
 const { generateToken, authenticateUser } = require("./authenticator"); // Import the authenticator
 const { paginate } = require("./utils/functions"); // Import the paginate function
+const axios = require("axios");
+
 // Swagger setup
 const swaggerOptions = {
   swaggerDefinition: {
@@ -208,6 +210,11 @@ app.post("/tracker", authenticateUser, async (req, res) => {
       }
       existingDevice.location = location;
       await existingDevice.save();
+
+      await triggerWebhook({
+        eventType: "location_update",
+        device: existingDevice,
+      });
       return res
         .status(200)
         .json({ message: "Device location updated", device: existingDevice });
@@ -219,6 +226,11 @@ app.post("/tracker", authenticateUser, async (req, res) => {
         user: req.user.id,
       });
       await newDevice.save();
+
+      await triggerWebhook({
+        eventType: "device_created",
+        device: newDevice,
+      });
       return res
         .status(201)
         .json({ message: "Device created", device: newDevice });
@@ -228,6 +240,27 @@ app.post("/tracker", authenticateUser, async (req, res) => {
   }
 });
 
+app.post("/webhook", (req, res) => {
+  const event = req.body;
+
+  // Process the event (you can add specific logic based on event type)
+
+  // Respond to acknowledge receipt
+  res.status(200).send(event);
+});
+
+async function triggerWebhook(payload) {
+  const webhookUrl = "http:localhost:3000/webhook"; // Your webhook endpoint
+  try {
+    await axios.post(webhookUrl, payload);
+    console.log("Webhook triggered:", payload);
+  } catch (error) {
+    console.error(
+      "Error triggering webhook:",
+      error.response?.data || error.message
+    );
+  }
+}
 // Define a route for signup
 /**
  * @swagger
