@@ -127,8 +127,9 @@ const TrackerMap = ({
   }, [selectedLayer, center, zoom]);
 
   const onUnmount = useCallback(function callback() {
-    markersRef.current.forEach((marker) => marker.setMap(null));
+    markersRef.current = [];
     setMap(null);
+    windyInstance.current = null;
   }, []);
 
   if (!isLoaded || typeof window.google === "undefined") {
