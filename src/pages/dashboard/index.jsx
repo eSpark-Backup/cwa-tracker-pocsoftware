@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -41,20 +41,31 @@ const Dashboard = () => {
     }
   }, [isError]);
 
-  const fetchDevices = async () => {
+  const fetchDevices = async (trackers) => {
     await getDevices().then((res) => {
       if (res?.data) {
         const formattedData = res?.data?.items.map((item) => { return { id: item?.deviceId, name: item?.deviceName, position: { lat: item?.location?.coordinates[0], lng: item?.location?.coordinates[1] } } })
+        if (JSON.stringify(trackers) === JSON.stringify(formattedData)) return;
         setTrackers(formattedData)
-        setSelectedTracker(formattedData[0].id)
-        setCenter(formattedData[0].position)
+        if (!trackers) {
+          setSelectedTracker(formattedData[0].id)
+          setCenter(formattedData[0].position)
+        }
       }
     })
   }
 
   useEffect(() => {
-    fetchDevices()
+    fetchDevices();
   }, [])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchDevices(trackers);
+    }, 120000);
+
+    return () => clearInterval(interval);
+  }, [trackers])
 
   return (
     <div className="main">
@@ -85,33 +96,37 @@ const Dashboard = () => {
       <div className="grid">
         <div className="list-box">
           <h3 className="heading">{t("trackers")}</h3>
-          <ul>
-            {isLoading ? <p className="no-trackers">Loading</p> : trackers.length > 0 ? trackers.map((tracker) => (
-              <li
-                key={tracker.id}
-                onClick={() => setSelectedTracker(tracker.id)}
-                className={selectedTracker === tracker.id ? "active" : ""}
-              >
-                {tracker.name}
-              </li>
-            ))
-              : <p className="no-trackers">No Devices Found</p>}
-          </ul>
+          {useMemo(() => (
+            <ul>
+              {isLoading ? <p className="no-trackers">Loading</p> : trackers.length > 0 ? trackers.map((tracker) => (
+                <li
+                  key={tracker.id}
+                  onClick={() => setSelectedTracker(tracker.id)}
+                  className={selectedTracker === tracker.id ? "active" : ""}
+                >
+                  {tracker.name}
+                </li>
+              ))
+                : <p className="no-trackers">No Devices Found</p>}
+            </ul>
+          ), [trackers, selectedTracker])}
         </div>
 
         <div className="map-box">
-          <TrackerMap
-            isLoading={isLoading}
-            selectedLayer={selectedLayer}
-            trackers={trackers}
-            setSelectedTracker={setSelectedTracker}
-            selectedTracker={selectedTracker}
-            containerStyle={containerStyle}
-            center={center}
-            setCenter={setCenter}
-            zoom={zoom}
-            setZoom={setZoom}
-          />
+          {useMemo(() => (
+            <TrackerMap
+              isLoading={isLoading}
+              selectedLayer={selectedLayer}
+              trackers={trackers}
+              setSelectedTracker={setSelectedTracker}
+              selectedTracker={selectedTracker}
+              containerStyle={containerStyle}
+              center={center}
+              setCenter={setCenter}
+              zoom={zoom}
+              setZoom={setZoom}
+            />
+          ), [trackers, selectedLayer, selectedTracker, containerStyle, center, zoom])}
         </div>
       </div>
     </div>
