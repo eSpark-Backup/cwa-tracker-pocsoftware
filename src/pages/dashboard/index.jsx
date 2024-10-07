@@ -62,7 +62,7 @@ const Dashboard = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       fetchDevices(trackers);
-    }, 120000);
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [trackers])
