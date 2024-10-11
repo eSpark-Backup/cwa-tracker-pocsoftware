@@ -13,6 +13,9 @@ const qrcode = require("qrcode"); // Ensure you have qrcode installed
 const { generateToken, authenticateUser } = require("./authenticator"); // Import the authenticator
 const { paginate } = require("./utils/functions"); // Import the paginate function
 const axios = require("axios");
+const path = require("path");
+const fs = require("fs");
+const spdy = require("spdy");
 
 // Swagger setup
 const swaggerOptions = {
@@ -25,7 +28,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: "http://localhost:3000",
+        url: "https://localhost:8000",
       },
       {
         url: "https://api.chipworksarabia.com",
@@ -70,7 +73,7 @@ app.use(helmet());
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs)); // Serve Swagger UI
 
 // Define a port from env file
-const port = process.env.PORT || 3000;
+const port = 8000;
 
 // Connect to MongoDB
 mongoose
@@ -211,10 +214,15 @@ app.post("/tracker", authenticateUser, async (req, res) => {
       existingDevice.location = location;
       await existingDevice.save();
 
-      await triggerWebhook({
-        eventType: "location_update",
-        device: existingDevice,
-      });
+      await triggerWebhook(
+        {
+          eventType: "location_update",
+          device: existingDevice,
+        },
+        {
+          userId: req.user.id,
+        }
+      );
       return res
         .status(200)
         .json({ message: "Device location updated", device: existingDevice });
@@ -227,10 +235,15 @@ app.post("/tracker", authenticateUser, async (req, res) => {
       });
       await newDevice.save();
 
-      await triggerWebhook({
-        eventType: "device_created",
-        device: newDevice,
-      });
+      await triggerWebhook(
+        {
+          eventType: "device_created",
+          device: newDevice,
+        },
+        {
+          userId: req.user.id,
+        }
+      );
       return res
         .status(201)
         .json({ message: "Device created", device: newDevice });
@@ -249,11 +262,15 @@ app.post("/webhook", (req, res) => {
   res.status(200).send(event);
 });
 
-async function triggerWebhook(payload) {
-  const webhookUrl = "http:localhost:3000/webhook"; // Your webhook endpoint
+async function triggerWebhook(payload, user) {
   try {
-    await axios.post(webhookUrl, payload);
-    console.log("Webhook triggered:", payload);
+    if (clientStreams.length > 0) {
+      clientStreams.forEach((stream) => {
+        if (stream.userId === user.userId) {
+          stream.write(`data: ${JSON.stringify(payload)}\n\n`);
+        }
+      });
+    }
   } catch (error) {
     console.error(
       "Error triggering webhook:",
@@ -513,7 +530,66 @@ app.post("/verify-token", async (req, res) => {
   }
 });
 
+app.post("/send", (req, res) => {
+  const data = req.body.data;
+
+  if (clientStreams.length > 0) {
+    clientStreams.forEach((stream) => {
+      stream.write(`data: ${data}\n\n`);
+    });
+    res.send("Data sent to all streams");
+  } else {
+    res.status(400).send("No active streams");
+  }
+});
+let clientStreams = [];
+
+/**
+ * @swagger
+ * /stream:
+ *   get:
+ *     tags:
+ *     - Device Controller
+ *     summary: Get Real time Data
+ *     security:
+ *      - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully established a stream connection
+ *         content:
+ *           text/event-stream:
+ *             schema:
+ *               type: string
+ *       401:
+ *         description: Unauthorized - User is not authenticated
+ *       500:
+ *         description: Internal Server Error
+ */
+app.get("/stream", authenticateUser, (req, res) => {
+  const userId = req.user.id;
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Connection", "keep-alive");
+  res.userId = userId;
+
+  clientStreams.push(res);
+
+  // Clean up on disconnect
+  req.on("close", () => {
+    clientStreams = clientStreams.filter((stream) => stream !== res);
+  });
+});
+const options = {
+  key: fs.readFileSync(__dirname + "/server-key.pem"),
+  cert: fs.readFileSync(__dirname + "/server-cert.pem"),
+};
+
 // Start the server
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+spdy.createServer(options, app).listen(port, (error) => {
+  if (error) {
+    console.error(error);
+    return process.exit(1);
+  } else {
+    console.log("Listening on port: " + port + ".");
+  }
 });
