@@ -588,6 +588,6 @@ spdy.createServer(options, app).listen(port, (error) => {
     console.error(error);
     return process.exit(1);
   } else {
-    console.log("Listening on port: " + PORT + ".");
+    console.log("Listening on port: " + port + ".");
   }
 });
