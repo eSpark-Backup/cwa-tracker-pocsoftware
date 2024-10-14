@@ -3,7 +3,11 @@ const paginate = async (model, page, limit, query) => {
   const totalPages = Math.ceil(totalItems / limit);
   const offset = (page - 1) * limit;
 
-  const items = await model.find(query).skip(offset).limit(limit);
+  const items = await model
+    .find(query)
+    .sort({ createdAt: -1 })
+    .skip(offset)
+    .limit(limit);
 
   return {
     totalItems,

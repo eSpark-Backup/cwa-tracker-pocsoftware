@@ -128,7 +128,7 @@ app.get("/", (req, res) => {
  *         description: Error retrieving devices
  */
 app.get("/devices", authenticateUser, async (req, res) => {
-  const { page = 1, limit = 10 } = req.query; // Get page and limit from query parameters
+  const { page = 1, limit = 500 } = req.query; // Get page and limit from query parameters
   const query = { user: req.user.id }; // Query to find devices for the authenticated user
 
   try {
