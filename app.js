@@ -49,7 +49,6 @@ const swaggerOptions = {
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 const app = express(); // Initialize Express
-
 // Middleware to parse JSON bodies
 app.use(express.json()); // Parse JSON requests
 
@@ -73,7 +72,7 @@ app.use(helmet());
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs)); // Serve Swagger UI
 
 // Define a port from env file
-const port = 8000;
+const PORT = process.env.PORT || 8000; // Use environment variable or default to 8000
 
 // Connect to MongoDB
 mongoose
@@ -585,11 +584,11 @@ const options = {
 };
 
 // Start the server
-spdy.createServer(options, app).listen(port, (error) => {
+spdy.createServer(options, app).listen(PORT, (error) => {
   if (error) {
     console.error(error);
     return process.exit(1);
   } else {
-    console.log("Listening on port: " + port + ".");
+    console.log("Listening on port: " + PORT + ".");
   }
 });
