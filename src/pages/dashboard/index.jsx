@@ -17,6 +17,7 @@ const Dashboard = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [enableEvent, setEnableEvent] = useState(false)
   const [trackers, setTrackers] = useState([]);
   const [selectedTracker, setSelectedTracker] = useState();
   const [selectedLayer, setSelectedLayer] = useState("");
@@ -34,6 +35,8 @@ const Dashboard = () => {
         toast.error("Session expired")
         dispatch(logout())
         navigate("/sign-in")
+      } else if (error?.status === 404) {
+        setEnableEvent(true)
       } else {
         toast.error(error?.data?.message || "Something went wrong");
       }
@@ -41,16 +44,14 @@ const Dashboard = () => {
     }
   }, [isError]);
 
-  const fetchDevices = async (trackers) => {
+  const fetchDevices = async () => {
     await getDevices().then((res) => {
       if (res?.data) {
         const formattedData = res?.data?.items.map((item) => { return { id: item?.deviceId, name: item?.deviceName, position: { lat: item?.location?.coordinates[0], lng: item?.location?.coordinates[1] } } })
-        if (JSON.stringify(trackers) === JSON.stringify(formattedData)) return;
         setTrackers(formattedData)
-        if (!trackers) {
-          setSelectedTracker(formattedData[0].id)
-          setCenter(formattedData[0].position)
-        }
+        setSelectedTracker(formattedData[0].id)
+        setCenter(formattedData[0].position)
+        setEnableEvent(true)
       }
     })
   }
@@ -59,13 +60,73 @@ const Dashboard = () => {
     fetchDevices();
   }, [])
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchDevices(trackers);
-    }, 30000);
+  const token = localStorage.getItem("token")
 
-    return () => clearInterval(interval);
-  }, [trackers])
+  useEffect(() => {
+    let reader;
+    let retryTimeout;
+
+    const fetchStream = async (trackers) => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_BASEURL}/stream`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          console.error("Failed to connect to the stream.");
+          return;
+        }
+
+        reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        const processStream = ({ done, value }) => {
+          if (done) {
+            console.log("Stream has ended.");
+            return;
+          }
+
+          const chunk = decoder.decode(value, { stream: true });
+          const events = chunk.split("\n\n").filter(Boolean);
+
+          events.forEach((event) => {
+            if (event.startsWith("data: ")) {
+              const jsonData = event.replace("data: ", "");
+              const parsedData = JSON.parse(jsonData);
+
+              const formattedDeviceData = {
+                id: parsedData.device?.deviceId,
+                name: parsedData.device?.deviceName,
+                position: {
+                  lat: parsedData.device?.location?.coordinates[0],
+                  lng: parsedData.device?.location?.coordinates[1]
+                }
+              }
+              if (parsedData.eventType === "device_created") {
+                setTrackers([formattedDeviceData, ...trackers])
+              } else if (parsedData.eventType === "location_update") {
+                setTrackers(trackers.map(item => { if (item?.id === parsedData.device?.deviceId) { return formattedDeviceData } return item }))
+              }
+            }
+          });
+
+          reader.read().then(processStream);
+        };
+
+        reader.read().then(processStream);
+      } catch (error) {
+        console.error("Network error, attempting to reconnect...", error);
+        retryTimeout = setTimeout(() => fetchStream(trackers), 5000);
+      }
+    };
+
+    if (token && enableEvent) {
+      fetchStream(trackers);
+    }
+  }, [token, trackers, enableEvent]);
 
   return (
     <div className="main">
