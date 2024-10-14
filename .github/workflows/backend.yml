@@ -20,4 +20,4 @@ jobs:
         docker stop cwa-poc-be
         docker rm cwa-poc-be
         docker build . -t tracker-backend:latest
-        docker run -d -p 3001:3000 --name cwa-poc-be tracker-backend:latest
+        docker run -d -p 3001:8000 --name cwa-poc-be tracker-backend:latest
