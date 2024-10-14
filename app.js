@@ -72,8 +72,7 @@ app.use(helmet());
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs)); // Serve Swagger UI
 
 // Define a port from env file
-const PORT = process.env.PORT || 8000; // Use environment variable or default to 8000
-
+const port = 8000;
 // Connect to MongoDB
 mongoose
   .connect(process.env.MONGODB_URI, {
@@ -584,7 +583,7 @@ const options = {
 };
 
 // Start the server
-spdy.createServer(options, app).listen(PORT, (error) => {
+spdy.createServer(options, app).listen(port, (error) => {
   if (error) {
     console.error(error);
     return process.exit(1);
