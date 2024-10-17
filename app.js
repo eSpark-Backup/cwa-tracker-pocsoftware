@@ -28,7 +28,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: "https://localhost:8000",
+        url: "http://localhost:8000",
       },
       {
         url: "https://api.chipworksarabia.com",
@@ -577,17 +577,8 @@ app.get("/stream", authenticateUser, (req, res) => {
     clientStreams = clientStreams.filter((stream) => stream !== res);
   });
 });
-const options = {
-  key: fs.readFileSync(__dirname + "/server-key.pem"),
-  cert: fs.readFileSync(__dirname + "/server-cert.pem"),
-};
 
-// Start the server
-spdy.createServer(options, app).listen(port, (error) => {
-  if (error) {
-    console.error(error);
-    return process.exit(1);
-  } else {
-    console.log("Listening on port: " + port + ".");
-  }
+const PORT = process.env.PORT || 8000; // Use environment variable or default to 8000
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
