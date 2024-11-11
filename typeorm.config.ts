@@ -1,7 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
-import { Device, BaseEntity } from '@app/common';
 console.log(__dirname);
 export const typeOrmConfig = (
   configService: ConfigService,
@@ -9,8 +8,10 @@ export const typeOrmConfig = (
   type: 'cockroachdb',
   url: configService.get<string>('COCKROACHDB_URL'),
   ssl: true,
-  entities: [Device, BaseEntity],
-  migrations: [Device, BaseEntity],
+  entities: [__dirname + '/libs/common/src/database/entity/*.entity{.ts,.js}'],
+  migrations: [
+    __dirname + '/libs/common/src/database/entity/*.entity{.ts,.js}',
+  ],
   synchronize: true,
   logging: true,
 });

@@ -2,11 +2,14 @@
 import { Entity, Column, PrimaryGeneratedColumn, Index } from 'typeorm';
 import { BaseEntity } from './base.entity';
 
-@Entity('devices')
+@Entity()
 @Index('IDX_device_id', ['id'])
 export class Device extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column({ type: 'varchar', length: 50 })
+  name: string;
 
   @Column({ type: 'varchar', length: 50, unique: true })
   code: string;

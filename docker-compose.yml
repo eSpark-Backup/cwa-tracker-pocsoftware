@@ -1,0 +1,29 @@
+services:
+  tracker:
+    build:
+      context: .
+      dockerfile: ./apps/tracker/Dockerfile
+      target: development
+    command: npm run start:dev tracker
+    env_file:
+      - ./apps/tracker/.env
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - '3000:3000'
+
+  location:
+    build:
+      context: .
+      dockerfile: ./apps/location/Dockerfile
+      target: development
+    command: npm run start:dev location
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+  
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - '5672:5672'
