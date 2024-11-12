@@ -1,8 +1,9 @@
 /* eslint-disable prettier/prettier */
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { LocationService } from './location.service';
 import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices';
-import { RmqService } from '@app/common';
+import { JwtAuthGuard, RmqService } from '@app/common';
+//
 
 @Controller()
 export class LocationController {
@@ -17,6 +18,7 @@ export class LocationController {
   }
 
   @EventPattern('device_location')
+  @UseGuards(JwtAuthGuard)
   async handleLocation(@Payload() data: any, @Ctx() context: RmqContext) {
     this.locationService.updateLocation(data);
     this.rmqService.ack(context);

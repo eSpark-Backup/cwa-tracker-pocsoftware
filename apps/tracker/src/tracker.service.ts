@@ -1,6 +1,5 @@
 /* eslint-disable prettier/prettier */
 import {
-  ConflictException,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -9,10 +8,10 @@ import { CreateDeviceDto } from './dto/create.device.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Device } from '@app/common';
-import { LOCATION_SERVICE } from './constants/servics';
 import { ClientProxy } from '@nestjs/microservices';
 import { DeviceLocationDto } from './dto/device.location.dto';
 import { lastValueFrom } from 'rxjs';
+import { LOCATION_SERVICE } from './constants/services';
 
 @Injectable()
 export class TrackerService {
@@ -54,11 +53,17 @@ export class TrackerService {
     }
   }
 
-  async updateLocation(deviceLocationDto: DeviceLocationDto) {
+  async updateLocation(
+    deviceLocationDto: DeviceLocationDto,
+    authentication: string,
+  ) {
     try {
       return await this.dataSource.transaction(async (manager) => {
         await lastValueFrom(
-          this.locationClient.emit('device_location', deviceLocationDto),
+          this.locationClient.emit('device_location', {
+            deviceLocationDto,
+            Authentication: authentication,
+          }),
         );
       });
       return deviceLocationDto;

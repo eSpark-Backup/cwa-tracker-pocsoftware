@@ -6,7 +6,7 @@ export const typeOrmConfig = (
   configService: ConfigService,
 ): TypeOrmModuleOptions => ({
   type: 'cockroachdb',
-  url: configService.get<string>('COCKROACHDB_URL'),
+  url: configService.get<string>('COCKROACHDB_URI'),
   ssl: true,
   entities: [__dirname + '/libs/common/src/database/entity/*.entity{.ts,.js}'],
   migrations: [

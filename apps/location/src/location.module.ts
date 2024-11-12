@@ -2,7 +2,7 @@
 import { Module } from '@nestjs/common';
 import { LocationController } from './location.controller';
 import { LocationService } from './location.service';
-import { RmqModule } from '@app/common';
+import { AuthModule, RmqModule } from '@app/common';
 import { ConfigModule } from '@nestjs/config';
 import * as Joi from 'joi';
 
@@ -18,6 +18,7 @@ import * as Joi from 'joi';
       }),
       envFilePath: './apps/location/.env',
     }),
+    AuthModule,
   ],
   controllers: [LocationController],
   providers: [LocationService],
