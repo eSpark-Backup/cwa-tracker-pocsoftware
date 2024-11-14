@@ -27,24 +27,34 @@ export class JwtAuthGuard implements CanActivate {
           this.addUser(res, context);
         }),
         catchError(() => {
-          throw new UnauthorizedException();
+          throw new UnauthorizedException("User doesn't exist");
         }),
       );
   }
 
   private getAuthentication(context: ExecutionContext) {
     let authentication: string;
+
     if (context.getType() === 'rpc') {
       authentication = context.switchToRpc().getData().Authentication;
     } else if (context.getType() === 'http') {
-      authentication = context.switchToHttp().getRequest()
-        .cookies?.Authentication;
+      const request = context.switchToHttp().getRequest();
+      if (!request.headers.authorization) {
+        console.warn(
+          'Authorization header is missing from request:',
+          request.headers,
+        );
+        throw new UnauthorizedException('Authorization header is required');
+      }
+      authentication = this.extractTokenFromRequest(request);
     }
+
     if (!authentication) {
       throw new UnauthorizedException(
         'No value was provided for Authentication',
       );
     }
+
     return authentication;
   }
 
@@ -54,5 +64,12 @@ export class JwtAuthGuard implements CanActivate {
     } else if (context.getType() === 'http') {
       context.switchToHttp().getRequest().user = user;
     }
+  }
+  private extractTokenFromRequest(request: any): string {
+    const authHeader = request.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+    return authHeader.split(' ')[1];
   }
 }

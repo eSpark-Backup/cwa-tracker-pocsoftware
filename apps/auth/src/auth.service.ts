@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable prettier/prettier */
 import { User } from '@app/common';
 import { Injectable } from '@nestjs/common';
@@ -7,6 +8,7 @@ import { Response } from 'express';
 
 export interface TokenPayload {
   userId: string;
+  email: string;
 }
 
 @Injectable()
@@ -16,28 +18,14 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async login(user: User, response: Response) {
+  async login(user: User) {
     const tokenPayload: TokenPayload = {
       userId: user.id.toString(),
+      email: user.email,
     };
-
-    const expires = new Date();
-    expires.setSeconds(
-      expires.getSeconds() + this.configService.get('JWT_EXPIRATION'),
-    );
 
     const token = this.jwtService.sign(tokenPayload);
 
-    response.cookie('Authentication', token, {
-      httpOnly: true,
-      expires,
-    });
-  }
-
-  logout(response: Response) {
-    response.cookie('Authentication', '', {
-      httpOnly: true,
-      expires: new Date(),
-    });
+    return { access_token: token };
   }
 }

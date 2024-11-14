@@ -3,11 +3,14 @@ import { User } from '@app/common';
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
 export const getCurrentUserByContext = (context: ExecutionContext): User => {
-  if (context.getType() === 'http') {
-    return context.switchToHttp().getRequest().user;
+  const contextType = context.getType();
+  if (contextType === 'http') {
+    const user = context.switchToHttp().getRequest().user;
+    return user;
   }
-  if (context.getType() === 'rpc') {
-    return context.switchToRpc().getData().user;
+  if (contextType === 'rpc') {
+    const user = context.switchToRpc().getData().user;
+    return user;
   }
 };
 

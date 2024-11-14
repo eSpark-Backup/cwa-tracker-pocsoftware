@@ -1,12 +1,13 @@
 /* eslint-disable prettier/prettier */
-import { Controller, Post, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
-import { Response } from 'express';
 import { AuthService } from './auth.service';
-import JwtAuthGuard from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { CurrentUser } from './current-user.decorator';
 import { User } from '@app/common';
+import { LoginDto } from './dto/login.dto';
+import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import JwtAuthGuard from './guards/jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -14,12 +15,15 @@ export class AuthController {
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
-  async login(
-    @CurrentUser() user: User,
-    @Res({ passthrough: true }) response: Response,
-  ) {
-    await this.authService.login(user, response);
-    response.send(user);
+  @ApiOperation({ summary: 'Log in and set JWT in HttpOnly cookie' })
+  @ApiBody({ type: LoginDto })
+  @ApiResponse({
+    status: 200,
+    description: 'User data with JWT set in cookie',
+    type: User,
+  })
+  async login(@CurrentUser() user: User) {
+    return this.authService.login(user);
   }
 
   @UseGuards(JwtAuthGuard)

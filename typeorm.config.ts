@@ -13,5 +13,5 @@ export const typeOrmConfig = (
     __dirname + '/libs/common/src/database/entity/*.entity{.ts,.js}',
   ],
   synchronize: true,
-  logging: true,
+  logging: false,
 });

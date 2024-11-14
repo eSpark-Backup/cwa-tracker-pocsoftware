@@ -9,12 +9,18 @@ import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create.user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { JwtService } from '@nestjs/jwt';
 
+export interface TokenPayload {
+  userId: string;
+  email: string;
+}
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepo: Repository<User>,
+    private readonly jwtService: JwtService,
   ) {}
 
   async createUser(request: CreateUserDto) {
@@ -25,7 +31,14 @@ export class UsersService {
       role: 'user',
       password: await bcrypt.hash(request.password, 10),
     });
-    return user;
+    delete user.password;
+    const tokenPayload: TokenPayload = {
+      userId: user.id.toString(),
+      email: user.email,
+    };
+
+    const token = this.jwtService.sign(tokenPayload);
+    return { accessToken: token };
   }
 
   private async validateCreateUserRequest(request: CreateUserDto) {
@@ -39,6 +52,10 @@ export class UsersService {
     if (user) {
       throw new UnprocessableEntityException('Email already exists');
     }
+  }
+
+  async generateQr(user: User) {
+    return user;
   }
 
   async validateUser(email: string, password: string) {

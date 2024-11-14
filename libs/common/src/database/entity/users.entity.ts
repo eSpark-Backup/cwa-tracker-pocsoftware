@@ -9,7 +9,7 @@ export class User extends BaseEntity {
   @Index() // Single index on the user ID
   id: string;
 
-  @Column({ type: 'varchar', length: 100, unique: true })
+  @Column({ type: 'varchar', length: 100, unique: false })
   name: string;
 
   @Column({ type: 'varchar', length: 100, unique: true })

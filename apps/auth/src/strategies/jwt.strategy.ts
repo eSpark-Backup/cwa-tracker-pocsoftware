@@ -28,6 +28,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         where: { id: userId },
       });
     } catch (err) {
+      console.error(err);
       throw new UnauthorizedException();
     }
   }
