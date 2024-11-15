@@ -1,6 +1,8 @@
 /* eslint-disable prettier/prettier */
 import { User } from '@app/common';
 import {
+  HttpException,
+  HttpStatus,
   Injectable,
   UnauthorizedException,
   UnprocessableEntityException,
@@ -10,7 +12,8 @@ import { CreateUserDto } from './dto/create.user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
-
+import * as otplib from 'otplib';
+import * as qrcode from 'qrcode';
 export interface TokenPayload {
   userId: string;
   email: string;
@@ -50,12 +53,59 @@ export class UsersService {
     } catch (err) {}
 
     if (user) {
-      throw new UnprocessableEntityException('Email already exists');
+      throw new UnprocessableEntityException('Email already exists ');
+    }
+  }
+  async verifyToken(user: User, token: string) {
+    try {
+      const isValid = otplib.authenticator.verify({
+        token,
+        secret: user.secret,
+      });
+
+      if (isValid) {
+        user.is2FA = true;
+        await this.usersRepo.save(user);
+
+        return { data: null, message: 'Token verified successfully' };
+      } else {
+        throw new HttpException('Invalid token', HttpStatus.UNAUTHORIZED);
+      }
+    } catch (error) {
+      throw new HttpException(
+        'Error verifying token',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
   async generateQr(user: User) {
-    return user;
+    const secret = otplib.authenticator.generateSecret();
+    const otpauthUrl = otplib.authenticator.keyuri(
+      user.email,
+      process.env.ISSUER || 'CWA-TRACKER',
+      secret,
+    );
+    const updateResult = await this.usersRepo
+      .createQueryBuilder()
+      .update(User)
+      .set({ email: user.email, secret: secret })
+      .where('id = :id', { id: user.id })
+      .execute();
+
+    if (updateResult.affected === 0) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+    const qrCode = await qrcode.toDataURL(otpauthUrl);
+    const data = {
+      qrCode,
+      secret,
+    };
+
+    return {
+      data: data,
+      messsage: 'QR code generated successfully',
+    };
   }
 
   async validateUser(email: string, password: string) {

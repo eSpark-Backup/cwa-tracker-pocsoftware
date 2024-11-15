@@ -9,6 +9,6 @@ export class LocationService {
   }
 
   updateLocation(data: any) {
-    this.logger.log(data);
+    this.logger.log(data.deviceLocationDto);
   }
 }

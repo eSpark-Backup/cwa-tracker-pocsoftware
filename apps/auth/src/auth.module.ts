@@ -2,13 +2,19 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { RmqModule, DatabaseModule } from '@app/common';
+import {
+  RmqModule,
+  DatabaseModule,
+  GlobalExceptionFilter,
+  SuccessResponseInterceptor,
+} from '@app/common';
 import * as Joi from 'joi';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UsersModule } from './users/users.module';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core/constants';
 
 @Module({
   imports: [
@@ -35,6 +41,18 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
+  providers: [
+    AuthService,
+    LocalStrategy,
+    JwtStrategy,
+    {
+      provide: APP_FILTER,
+      useClass: GlobalExceptionFilter,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: SuccessResponseInterceptor,
+    },
+  ],
 })
 export class AuthModule {}

@@ -1,6 +1,13 @@
 /* eslint-disable prettier/prettier */
-import { Entity, PrimaryGeneratedColumn, Column, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  Index,
+  OneToMany,
+} from 'typeorm';
 import { BaseEntity } from './base.entity';
+import { DeviceUser } from './user.device.entity';
 
 @Entity()
 @Index(['id', 'email']) // Create a composite index on both id and email
@@ -27,4 +34,7 @@ export class User extends BaseEntity {
 
   @Column({ type: 'boolean', default: false })
   is2FA: boolean;
+
+  @OneToMany(() => DeviceUser, (deviceUser) => deviceUser.user)
+  deviceUsers: DeviceUser[];
 }
